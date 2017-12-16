@@ -1,3 +1,4 @@
+const dbg = require('debug')('parcel:Asset');
 const path = require('path');
 const fs = require('./utils/fs');
 const objectHash = require('./utils/objectHash');
@@ -14,6 +15,7 @@ let ASSET_ID = 1;
  */
 class Asset {
   constructor(name, pkg, options) {
+    dbg('constructor', [name, (pkg || {}).name, options]);
     this.id = ASSET_ID++;
     this.name = name;
     this.basename = path.basename(this.name);
@@ -35,12 +37,14 @@ class Asset {
   }
 
   async loadIfNeeded() {
+    dbg('loadIfNeeded');
     if (this.contents == null) {
       this.contents = await this.load();
     }
   }
 
   async parseIfNeeded() {
+    dbg('parseIfNeeded');
     await this.loadIfNeeded();
     if (!this.ast) {
       this.ast = await this.parse(this.contents);
@@ -48,6 +52,7 @@ class Asset {
   }
 
   async getDependencies() {
+    dbg('getDependencies');
     await this.loadIfNeeded();
 
     if (this.mightHaveDependencies()) {
@@ -57,11 +62,11 @@ class Asset {
   }
 
   addDependency(name, opts) {
-    console.log(['addDependency', name, this.name]);
-    if (name.indexOf('?') >= 0) {
-      name = name.replace('?', '\\?');
-    }
-    this.dependencies.set(name, Object.assign({name}, opts));
+    dbg('addDependency', [name, this.name, opts]);
+    this.dependencies.set(
+      name,
+      Object.assign(this.dependencies.get(name) || {}, {name}, opts)
+    );
   }
 
   fixPath(file) {
@@ -78,6 +83,7 @@ class Asset {
   }
 
   addURLDependency(url, from = this.name, opts) {
+    dbg('addURLDependency', [url, from, opts]);
     if (!url || isURL(url)) {
       return url;
     }
@@ -114,24 +120,31 @@ class Asset {
   }
 
   async load() {
+    dbg('load', [this.name, this.encoding]);
     return await fs.readFile(this.name, this.encoding);
   }
 
   parse() {
+    dbg('parse', [this.name]);
     // do nothing by default
   }
 
   collectDependencies() {
     // do nothing by default
+    dbg('collectDependencies', [this.name]);
   }
 
-  async pretransform() {}
+  async pretransform() {
+    dbg('pretransform', [this.name]);
+  }
 
   async transform() {
     // do nothing by default
+    dbg('transform', [this.name]);
   }
 
   generate() {
+    dbg('generate', [this.name]);
     return {
       [this.type]: this.contents
     };
@@ -139,6 +152,7 @@ class Asset {
 
   async process() {
     if (!this.generated) {
+      dbg('process', [this.name]);
       await this.loadIfNeeded();
       await this.pretransform();
       await this.getDependencies();
@@ -151,10 +165,13 @@ class Asset {
   }
 
   generateHash() {
-    return objectHash(this.generated);
+    const hash = objectHash(this.generated);
+    dbg('generateHash', [this.name, hash]);
+    return hash;
   }
 
   invalidate() {
+    dbg('invalidate', [this.name]);
     this.processed = false;
     this.contents = null;
     this.ast = null;
@@ -165,12 +182,14 @@ class Asset {
   }
 
   invalidateBundle() {
+    dbg('invalidateBundle', [this.name]);
     this.parentBundle = null;
     this.bundles.clear();
     this.parentDeps.clear();
   }
 
   generateBundleName(isMainAsset) {
+    dbg('generateBundleName', [this.name, isMainAsset]);
     // Resolve the main file of the package.json
     let main =
       this.package && this.package.main
@@ -193,11 +212,12 @@ class Asset {
   }
 
   generateErrorMessage(err) {
+    dbg('generateErrorMessage', [this.name, err]);
     return err;
   }
 
   async resolve(dep) {
-    console.log(['resolvedep', dep.name, this.name]);
+    dbg('resolve', [this.name, dep.name]);
   }
 }
 

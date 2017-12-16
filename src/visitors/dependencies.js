@@ -1,9 +1,16 @@
 const types = require('babel-types');
-const {resolve} = require('path');
+const {resolve, extname} = require('path');
 const template = require('babel-template');
 
 const requireTemplate = template('require("_bundle_loader")');
 const argTemplate = template('require.resolve(MODULE)');
+
+function isDynamic(name) {
+  const ext = extname(name);
+  const ret = {dynamic: !(ext === '' || ext === 'js')};
+  console.log(['isDynamic', name, ret.dynamic]);
+  return ret;
+}
 
 module.exports = {
   ImportDeclaration(node, asset) {
@@ -37,6 +44,7 @@ module.exports = {
       types.isStringLiteral(args[0]);
 
     if (isRequire) {
+      // addDependency(asset, args[0], isDynamic(args[0].value));
       addDependency(asset, args[0]);
     }
 

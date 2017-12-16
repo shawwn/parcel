@@ -1,3 +1,4 @@
+const dbg = require('debug')('parcel:WorkerFarm');
 const {EventEmitter} = require('events');
 const os = require('os');
 const Farm = require('worker-farm/lib/farm');
@@ -8,7 +9,7 @@ let shared = null;
 class WorkerFarm extends Farm {
   constructor(options) {
     let opts = {
-      autoStart: false,
+      autoStart: true,
       maxConcurrentWorkers: getNumWorkers()
     };
 
@@ -45,7 +46,7 @@ class WorkerFarm extends Farm {
     }
 
     await Promise.all(promises);
-    //this.started = true;
+    this.started = true;
   }
 
   receive(data) {
@@ -60,13 +61,23 @@ class WorkerFarm extends Farm {
     // Child process workers are slow to start (~600ms).
     // While we're waiting, just run on the main thread.
     // This significantly speeds up startup time.
+    const file = args[0];
+    const pkg = args[1] && args[1].name;
+    const opts = args[2];
+    let result;
+    let remote;
     if (!this.started) {
-      console.log('local');
-      return this.localWorker.run(...args);
+      remote = false;
+      dbg('local', [file, pkg, opts]);
+      result = await this.localWorker.run(...args);
     } else {
-      console.log('remote');
-      return this.remoteWorker.run(...args);
+      remote = true;
+      dbg('remote', [file, pkg, opts]);
+      result = await this.remoteWorker.run(...args);
     }
+    dbg('result', [remote ? 'remote' : 'local', file, pkg, opts]);
+    dbg('result', result);
+    return result;
   }
 
   end() {

@@ -1,3 +1,4 @@
+const dbg = require('debug')('parcel:Bundle');
 const Path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -10,6 +11,7 @@ const crypto = require('crypto');
  */
 class Bundle {
   constructor(type, name, parent) {
+    dbg('constructor', [type, name, parent]);
     this.type = type;
     this.name = name;
     this.parentBundle = parent;
@@ -20,16 +22,23 @@ class Bundle {
   }
 
   addAsset(asset) {
+    dbg('addAsset', [this.type, this.name, {id: asset.id, name: asset.name}]);
     asset.bundles.add(this);
     this.assets.add(asset);
   }
 
   removeAsset(asset) {
+    dbg('removeAsset', [
+      this.type,
+      this.name,
+      {id: asset.id, name: asset.name}
+    ]);
     asset.bundles.delete(this);
     this.assets.delete(asset);
   }
 
   getSiblingBundle(type) {
+    dbg('getSiblingBundle', [this.type, this.name, type]);
     if (!type || type === this.type) {
       return this;
     }
@@ -49,6 +58,7 @@ class Bundle {
   }
 
   createChildBundle(type, name) {
+    dbg('createChildBundle', [this.type, this.name, type, name]);
     let bundle = new Bundle(type, name, this);
     this.childBundles.add(bundle);
     return bundle;
@@ -59,6 +69,7 @@ class Bundle {
   }
 
   async package(bundler, oldHashes, newHashes = new Map()) {
+    dbg('package', [this.type, this.name /*bundler*/]);
     if (this.isEmpty) {
       return newHashes;
     }
@@ -80,6 +91,7 @@ class Bundle {
   }
 
   async _package(bundler) {
+    dbg('_package', [this.type, this.name, bundler]);
     let Packager = bundler.packagers.get(this.type);
     let packager = new Packager(this, bundler);
 
@@ -94,6 +106,13 @@ class Bundle {
   }
 
   async _addDeps(asset, packager, included) {
+    dbg('_addDeps', [
+      this.type,
+      this.name,
+      {id: asset.id, name: asset.name},
+      packager,
+      {included}
+    ]);
     if (!this.assets.has(asset) || included.has(asset)) {
       return;
     }
@@ -108,6 +127,7 @@ class Bundle {
   }
 
   getParents() {
+    dbg('getParents', [this.type, this.name]);
     let parents = [];
     let bundle = this;
 
@@ -123,6 +143,14 @@ class Bundle {
     // Get a list of parent bundles going up to the root
     let ourParents = this.getParents();
     let theirParents = bundle.getParents();
+    dbg('findCommonAncestor', [
+      this.type,
+      this.name,
+      ourParents,
+      bundle.type,
+      bundle.name,
+      theirParents
+    ]);
 
     // Start from the root bundle, and find the first bundle that's different
     let a = ourParents.pop();
@@ -143,6 +171,7 @@ class Bundle {
   }
 
   getHash() {
+    dbg('getHash', [this.type, this.name]);
     let hash = crypto.createHash('md5');
     for (let asset of this.assets) {
       hash.update(asset.hash);

@@ -1,3 +1,4 @@
+const dbg = require('debug')('parcel:Bundler');
 const fs = require('./utils/fs');
 const Resolver = require('./Resolver');
 const Parser = require('./Parser');
@@ -23,6 +24,7 @@ class Bundler extends EventEmitter {
     super();
     this.mainFile = Path.resolve(main || '');
     this.options = this.normalizeOptions(options);
+    dbg('constructor', [this.mainFile, this.options]);
 
     this.resolver = new Resolver(this.options);
     this.parser = new Parser(this.options);
@@ -68,6 +70,7 @@ class Bundler extends EventEmitter {
   }
 
   addAssetType(extension, path) {
+    dbg('addAssetType', [this.mainFile, extension, path]);
     if (typeof path !== 'string') {
       throw new Error('Asset type should be a module path.');
     }
@@ -80,6 +83,7 @@ class Bundler extends EventEmitter {
   }
 
   addPackager(type, packager) {
+    dbg('addPackager', [this.mainFile, packager]);
     if (this.farm) {
       throw new Error('Packagers must be added before bundling.');
     }
@@ -88,6 +92,7 @@ class Bundler extends EventEmitter {
   }
 
   loadPlugins() {
+    dbg('loadPlugins', [this.mainFile]);
     try {
       let pkg = localRequire('./package.json', this.mainFile);
       let deps = Object.assign({}, pkg.dependencies, pkg.devDependencies);
@@ -115,6 +120,7 @@ class Bundler extends EventEmitter {
     let startTime = Date.now();
     this.pending = true;
     this.errored = false;
+    dbg('bundle', [this.mainFile, {isInitialBundle, startTime}]);
 
     this.logger.clear();
     this.logger.status('⏳', 'Building...');
@@ -154,6 +160,7 @@ class Bundler extends EventEmitter {
       }
     } finally {
       this.pending = false;
+      dbg('bundle:buildEnd', [this.mainFile, {isInitialBundle, startTime}]);
       this.emit('buildEnd');
 
       // If not in watch mode, stop the worker farm so we don't keep the process running.
@@ -167,6 +174,7 @@ class Bundler extends EventEmitter {
     if (this.farm) {
       return;
     }
+    dbg('start', [this.mainFile]);
 
     this.options.extensions = Object.assign({}, this.parser.extensions);
     this.farm = WorkerFarm.getShared(this.options);
@@ -188,6 +196,7 @@ class Bundler extends EventEmitter {
   }
 
   stop() {
+    dbg('stop', [this.mainFile]);
     if (this.farm) {
       this.farm.end();
     }
@@ -202,6 +211,7 @@ class Bundler extends EventEmitter {
   }
 
   async buildQueuedAssets(isInitialBundle = false) {
+    dbg('buildQueuedAssets', [this.mainFile, {isInitialBundle}]);
     // Consume the rebuild queue until it is empty.
     let loadedAssets = new Set();
     while (this.buildQueue.size > 0) {
@@ -247,6 +257,7 @@ class Bundler extends EventEmitter {
   }
 
   async resolveAsset(name, parent) {
+    dbg('resolveAsset', [this.mainFile, name, {parent}]);
     let {path, pkg} = await this.resolver.resolve(name, parent);
     if (this.loadedAssets.has(path)) {
       return this.loadedAssets.get(path);
@@ -263,6 +274,7 @@ class Bundler extends EventEmitter {
   }
 
   async resolveDep(asset, dep) {
+    dbg('resolveDep', [this.mainFile, asset, {dep}]);
     try {
       return (
         (await asset.resolve(dep)) ||
@@ -286,6 +298,7 @@ class Bundler extends EventEmitter {
   }
 
   async loadAsset(asset) {
+    dbg('loadAsset', [this.mainFile, asset.name]);
     if (asset.processed) {
       this.buildQueue.delete(asset);
       return;
@@ -313,6 +326,7 @@ class Bundler extends EventEmitter {
     // Call the delegate to get implicit dependencies
     let dependencies = processed.dependencies;
     if (this.delegate.getImplicitDependencies) {
+      dbg('loadAsset:getImplicitDependencies', [this.mainFile, asset.name]);
       let implicitDeps = await this.delegate.getImplicitDependencies(asset);
       if (implicitDeps) {
         dependencies = dependencies.concat(implicitDeps);
@@ -324,11 +338,17 @@ class Bundler extends EventEmitter {
       dependencies.map(async dep => {
         let assetDep = await this.resolveDep(asset, dep);
         if (dep.includedInParent) {
+          dbg('loadAsset:dep:includedInParent', [
+            this.mainFile,
+            asset.name,
+            assetDep.name
+          ]);
           // This dependency is already included in the parent's generated output,
           // so no need to load it. We map the name back to the parent asset so
           // that changing it triggers a recompile of the parent.
           this.loadedAssets.set(dep.name, asset);
         } else {
+          dbg('loadAsset:dep', [this.mainFile, asset.name, assetDep.name]);
           asset.dependencies.set(dep.name, dep);
           asset.depAssets.set(dep.name, assetDep);
           await this.loadAsset(assetDep);
@@ -340,6 +360,12 @@ class Bundler extends EventEmitter {
   }
 
   createBundleTree(asset, dep, bundle) {
+    dbg('createBundleTree', [
+      this.mainFile,
+      asset.name,
+      dep ? dep.name : undefined,
+      bundle ? bundle.name : undefined
+    ]);
     if (dep) {
       asset.parentDeps.add(dep);
     }
@@ -396,6 +422,7 @@ class Bundler extends EventEmitter {
   }
 
   moveAssetToBundle(asset, commonBundle) {
+    dbg('moveAssetToBundle', [this.mainFile, asset.name, commonBundle.name]);
     for (let bundle of Array.from(asset.bundles)) {
       bundle.removeAsset(asset);
       commonBundle.getSiblingBundle(bundle.type).addAsset(asset);
@@ -413,6 +440,7 @@ class Bundler extends EventEmitter {
   }
 
   *findOrphanAssets() {
+    dbg('findOrphanAssetes', [this.mainFile]);
     for (let asset of this.loadedAssets.values()) {
       if (!asset.parentBundle) {
         yield asset;
@@ -421,12 +449,15 @@ class Bundler extends EventEmitter {
   }
 
   unloadOrphanedAssets() {
+    dbg('unloadOrphanedAssets', [this.mainFile]);
     for (let asset of this.findOrphanAssets()) {
+      dbg('unloadOrphanedAssets:unload', [this.mainFile, asset.name]);
       this.unloadAsset(asset);
     }
   }
 
   unloadAsset(asset) {
+    dbg('unloadAsset', [this.mainFile, asset.name]);
     this.loadedAssets.delete(asset.name);
     if (this.watcher) {
       this.watcher.unwatch(asset.name);
@@ -434,6 +465,7 @@ class Bundler extends EventEmitter {
   }
 
   async onChange(path) {
+    dbg('onChange', [this.mainFile, path]);
     let asset = this.loadedAssets.get(path);
     if (!asset) {
       return;
@@ -452,10 +484,12 @@ class Bundler extends EventEmitter {
   }
 
   middleware() {
+    dbg('middleware', [this.mainFile]);
     return Server.middleware(this);
   }
 
   serve(port = 1234) {
+    dbg('serve', [this.mainFile, port]);
     this.logger.persistent(
       'Server running at ' + this.logger.chalk.cyan(`http://localhost:${port}`)
     );
