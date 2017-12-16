@@ -7,7 +7,9 @@ class RawAsset extends Asset {
 
   generate() {
     return {
-      js: `module.exports=${JSON.stringify(this.generateBundleName())};`
+      js: `module.exports=${JSON.stringify(
+        path.join(this.options.publicURL, this.generateBundleName())
+      )};`
     };
   }
 }

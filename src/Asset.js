@@ -57,7 +57,24 @@ class Asset {
   }
 
   addDependency(name, opts) {
+    console.log(['addDependency', name, this.name]);
+    if (name.indexOf('?') >= 0) {
+      name = name.replace('?', '\\?');
+    }
     this.dependencies.set(name, Object.assign({name}, opts));
+  }
+
+  fixPath(file) {
+    file = path.normalize(file);
+    if (file.startsWith(process.cwd())) {
+      file = file.replace(process.cwd(), '/');
+    }
+    file = path.normalize(file);
+    if (path.isAbsolute(file)) {
+      file = path.join(process.cwd(), file);
+    }
+    file = path.normalize(file);
+    return file;
   }
 
   addURLDependency(url, from = this.name, opts) {
@@ -69,12 +86,22 @@ class Asset {
       opts = from;
       from = this.name;
     }
+    let name = this.fixPath(this.name);
+    url = this.fixPath(url);
+    from = this.fixPath(from);
 
+    // if (path.isAbsolute(url)) {
+    //   url = url.replace('/', process.cwd());
+    //   //url = url.substring(1);
+    // }
     let resolved = path
       .resolve(path.dirname(from), url)
       .replace(/[\?#].*$/, '');
+    let rel = './' + path.relative(path.dirname(name), resolved);
+    console.log({url: url, from: from, resolved: resolved, rel: rel});
     this.addDependency(
-      './' + path.relative(path.dirname(this.name), resolved),
+      //path.isAbsolute(rel) ? rel : ('./' + rel),
+      rel,
       Object.assign({dynamic: true}, opts)
     );
     return this.options.parser
@@ -167,6 +194,10 @@ class Asset {
 
   generateErrorMessage(err) {
     return err;
+  }
+
+  async resolve(dep) {
+    console.log(['resolvedep', dep.name, this.name]);
   }
 }
 

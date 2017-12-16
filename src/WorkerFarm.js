@@ -8,8 +8,8 @@ let shared = null;
 class WorkerFarm extends Farm {
   constructor(options) {
     let opts = {
-      autoStart: true,
-      maxConcurrentWorkers: getNumWorkers(),
+      autoStart: false,
+      maxConcurrentWorkers: getNumWorkers()
     };
 
     super(opts, require.resolve('./worker'));
@@ -45,7 +45,7 @@ class WorkerFarm extends Farm {
     }
 
     await Promise.all(promises);
-    this.started = true;
+    //this.started = true;
   }
 
   receive(data) {
@@ -61,8 +61,10 @@ class WorkerFarm extends Farm {
     // While we're waiting, just run on the main thread.
     // This significantly speeds up startup time.
     if (!this.started) {
+      console.log('local');
       return this.localWorker.run(...args);
     } else {
+      console.log('remote');
       return this.remoteWorker.run(...args);
     }
   }

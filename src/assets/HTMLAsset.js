@@ -48,6 +48,12 @@ class HTMLAsset extends Asset {
             let assetPath = this.addURLDependency(node.attrs[attr]);
             if (!isURL(assetPath)) {
               assetPath = path.join(this.options.publicURL, assetPath);
+              console.log([
+                'publicURL',
+                this.options.publicURL,
+                assetPath,
+                node.attrs[attr]
+              ]);
             }
             node.attrs[attr] = assetPath;
             this.isAstDirty = true;

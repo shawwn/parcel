@@ -264,7 +264,10 @@ class Bundler extends EventEmitter {
 
   async resolveDep(asset, dep) {
     try {
-      return await this.resolveAsset(dep.name, asset.name);
+      return (
+        (await asset.resolve(dep)) ||
+        (await this.resolveAsset(dep.name, asset.name))
+      );
     } catch (err) {
       if (err.message.indexOf(`Cannot find module '${dep.name}'`) === 0) {
         err.message = `Cannot resolve dependency '${dep.name}'`;
@@ -289,7 +292,7 @@ class Bundler extends EventEmitter {
     }
 
     if (!this.errored) {
-      this.logger.status('⏳', `Building ${asset.basename}...`);
+      this.logger.status('⏳', `Building ${asset.name}...`);
     }
 
     // Mark the asset processed so we don't load it twice
@@ -437,7 +440,7 @@ class Bundler extends EventEmitter {
     }
 
     this.logger.clear();
-    this.logger.status('⏳', `Building ${asset.basename}...`);
+    this.logger.status('⏳', `Building ${asset.name}...`);
 
     // Add the asset to the rebuild queue, and reset the timeout.
     this.buildQueue.add(asset);
