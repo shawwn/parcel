@@ -26,6 +26,9 @@ class Asset {
 
     this.processed = false;
     this.contents = null;
+    if (options.contents != null) {
+      this.contents = options.contents;
+    }
     this.ast = null;
     this.generated = null;
     this.hash = null;
@@ -96,20 +99,12 @@ class Asset {
     url = this.fixPath(url);
     from = this.fixPath(from);
 
-    // if (path.isAbsolute(url)) {
-    //   url = url.replace('/', process.cwd());
-    //   //url = url.substring(1);
-    // }
     let resolved = path
       .resolve(path.dirname(from), url)
       .replace(/[\?#].*$/, '');
     let rel = './' + path.relative(path.dirname(name), resolved);
-    console.log({url: url, from: from, resolved: resolved, rel: rel});
-    this.addDependency(
-      //path.isAbsolute(rel) ? rel : ('./' + rel),
-      rel,
-      Object.assign({dynamic: true}, opts)
-    );
+    // console.log({url: url, from: from, resolved: resolved, rel: rel});
+    this.addDependency(rel, Object.assign({dynamic: true}, opts));
     return this.options.parser
       .getAsset(resolved, this.package, this.options)
       .generateBundleName();
@@ -174,6 +169,9 @@ class Asset {
     dbg('invalidate', [this.name]);
     this.processed = false;
     this.contents = null;
+    if (this.options.contents != null) {
+      this.contents = this.options.contents;
+    }
     this.ast = null;
     this.generated = null;
     this.hash = null;

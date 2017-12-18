@@ -11,17 +11,22 @@ class Resolver {
     this.cache = new Map();
   }
 
-  async resolve(filename, parent) {
-    var resolved = await this.resolveInternal(filename, parent, resolveAsync);
+  async resolve(filename, parent, opts = {}) {
+    var resolved = await this.resolveInternal(
+      filename,
+      parent,
+      opts,
+      resolveAsync
+    );
     return this.saveCache(filename, parent, resolved);
   }
 
-  resolveSync(filename, parent) {
-    var resolved = this.resolveInternal(filename, parent, resolve.sync);
+  resolveSync(filename, parent, opts = {}) {
+    var resolved = this.resolveInternal(filename, parent, opts, resolve.sync);
     return this.saveCache(filename, parent, resolved);
   }
 
-  resolveInternal(filename, parent, resolver) {
+  resolveInternal(filename, parent, opts, resolver) {
     let key = this.getCacheKey(filename, parent);
     if (this.cache.has(key)) {
       return this.cache.get(key);
@@ -38,17 +43,23 @@ class Resolver {
       extensions = [parentExt, ...extensions.filter(ext => ext !== parentExt)];
     }
 
-    return resolver(filename, {
-      filename: parent,
-      paths: this.options.paths,
-      modules: builtins,
-      extensions: extensions,
-      packageFilter(pkg, pkgfile) {
-        // Expose the path to the package.json file
-        pkg.pkgfile = pkgfile;
-        return pkg;
-      }
-    });
+    return resolver(
+      filename,
+      Object.assign(
+        {
+          filename: parent,
+          paths: this.options.paths,
+          modules: builtins,
+          extensions: extensions,
+          packageFilter(pkg, pkgfile) {
+            // Expose the path to the package.json file
+            pkg.pkgfile = pkgfile;
+            return pkg;
+          }
+        },
+        opts
+      )
+    );
   }
 
   getCacheKey(filename, parent) {

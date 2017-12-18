@@ -256,14 +256,64 @@ class Bundler extends EventEmitter {
     return bundle;
   }
 
-  async resolveAsset(name, parent) {
-    dbg('resolveAsset', [this.mainFile, name, {parent}]);
-    let {path, pkg} = await this.resolver.resolve(name, parent);
+  async resolveAsset(name, parent, contents) {
+    dbg('resolveAsset', [this.mainFile, name, {parent}, {contents}]);
+    if (contents) {
+      contents = contents;
+    }
+    var isFile = function(file, cb) {
+      dbg('resolveAsset:isFile', file);
+      if (file === name) {
+        file = file;
+        cb(null, true);
+      } else {
+        fs.stat(file, function(err, stat) {
+          if (err && err.code === 'ENOENT') cb(null, false);
+          else if (err) cb(err);
+          else {
+            cb(null, file === name || stat.isFile() || stat.isFIFO());
+          }
+        });
+      }
+    };
+    var readFile = function(file, cb) {
+      dbg('resolveAsset:readFile', file);
+      if (file === name) {
+        file = file;
+        cb(null, contents);
+      } else {
+        require('fs').readFile.apply(this, arguments);
+      }
+    };
+    // let {path, pkg} = await this.resolver.resolve(contents ? parent : name, contents ? null : parent, contents ? {isFile: true} : null);
+    let {path, pkg} = await this.resolver.resolve(
+      name,
+      parent,
+      contents != null ? {isFile, readFile} : null
+    );
+    if (contents) {
+      // path = Path.join(Path.dirname(path), Path.basename(name))
+      contents = contents;
+    }
     if (this.loadedAssets.has(path)) {
-      return this.loadedAssets.get(path);
+      let asset = this.loadedAssets.get(path);
+      if (asset.contents == contents) {
+        return asset;
+      } else {
+        //this.unloadAsset(asset);
+        asset.options.contents = contents;
+        asset.invalidate();
+        asset.invalidateBundle();
+        this.onChange(path);
+        return asset;
+      }
     }
 
-    let asset = this.parser.getAsset(path, pkg, this.options);
+    let asset = this.parser.getAsset(
+      path,
+      pkg,
+      Object.assign({contents}, this.options)
+    );
     this.loadedAssets.set(path, asset);
 
     if (this.watcher) {
@@ -278,7 +328,7 @@ class Bundler extends EventEmitter {
     try {
       return (
         (await asset.resolve(dep)) ||
-        (await this.resolveAsset(dep.name, asset.name))
+        (await this.resolveAsset(dep.name, asset.name, dep.contents))
       );
     } catch (err) {
       if (err.message.indexOf(`Cannot find module '${dep.name}'`) === 0) {
@@ -314,7 +364,11 @@ class Bundler extends EventEmitter {
     // First try the cache, otherwise load and compile in the background
     let processed = this.cache && (await this.cache.read(asset.name));
     if (!processed) {
-      processed = await this.farm.run(asset.name, asset.package, this.options);
+      processed = await this.farm.run(
+        asset.name,
+        asset.package,
+        Object.assign({contents: asset.contents}, this.options)
+      );
       if (this.cache) {
         this.cache.write(asset.name, processed);
       }

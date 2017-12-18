@@ -99,7 +99,7 @@ function hmrAccept(bundle, id) {
   }
 
   delete bundle.cache[id];
-  bundle(id);
+  bundle(id, undefined, bundle);
 
   cached = bundle.cache[id];
   if (cached && cached.hot && cached.hot._acceptCallback) {

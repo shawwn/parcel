@@ -105,11 +105,13 @@ class CSSAsset extends Asset {
     let js = '';
     if (this.options.hmr) {
       this.addDependency('_css_loader');
+      let style = JSON.stringify(css);
 
       js = `
-        var reloadCSS = require('_css_loader');
-        module.hot.dispose(reloadCSS);
-        module.hot.accept(reloadCSS);
+        var reloadCSS = require('_css_loader').insert('${style}');
+        if (module.hot) {
+          module.hot.dispose(reloadCSS);
+        }
       `;
     }
 

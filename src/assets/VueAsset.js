@@ -30,16 +30,9 @@ class VueAsset extends JSAsset {
       //this.addURLDependency(k, process.cwd());
       const contents = v.code.code || v.code;
       dbg('parse:vue:write', [k, contents]);
-      fs.writeFileSync(k, contents);
       this.addDependency(k, {contents: contents});
     });
     return await super.parse(this.contents);
-    // this.vue.deps.forEach((v, k, map) => {
-    //   //this.addURLDependency(k, process.cwd());
-    //   dbg('parse:vue:write', [k, v.code.code || v.code])
-    //   fs.writeFileSync(k, v.code.code || v.code);
-    // });
-    // return await super.parse(this.contents);
   }
 
   async resolve(dep) {
