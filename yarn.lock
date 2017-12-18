@@ -2111,6 +2111,10 @@ hash-base@^3.0.0:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
+hash-sum@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/hash-sum/-/hash-sum-1.0.2.tgz#33b40777754c6432573c120cc3808bbd10d47f04"
+
 hash.js@^1.0.0, hash.js@^1.0.3:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/hash.js/-/hash.js-1.1.3.tgz#340dedbe6290187151c1ea1d777a3448935df846"
@@ -4446,6 +4450,12 @@ sha.js@^2.4.0, sha.js@^2.4.8:
   dependencies:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
+
+shawwn-vue-compiler@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/shawwn-vue-compiler/-/shawwn-vue-compiler-0.0.1.tgz#74fb661d0d935d09b4cacb1a680c95bfe544058f"
+  dependencies:
+    hash-sum "^1.0.2"
 
 shebang-command@^1.2.0:
   version "1.2.0"
