@@ -2,21 +2,12 @@ const dbg = require('debug')('parcel:VueAsset');
 const JSAsset = require('./JSAsset');
 const config = require('../utils/config');
 const localRequire = require('../utils/localRequire');
-const compiler = require('shawwn-vue-compiler');
+const compiler = require('../transforms/vue');
 const fs = require('fs');
 
 class VueAsset extends JSAsset {
-  // constructor(name, pkg, options) {
-  //   super(name, pkg, options);
-  //   this.type = 'js';
-  //   this.isAstDirty = false;
-  // }
-
   collectDependencies() {
     dbg('collectDependencies');
-    this.addDependency(
-      'shawwn-vue-component-compiler/src/runtime/normalize-component'
-    );
     return super.collectDependencies();
   }
 
@@ -27,8 +18,7 @@ class VueAsset extends JSAsset {
     dbg('parse:vue', code);
     this.contents = this.vue.code;
     this.vue.deps.forEach((v, k, map) => {
-      //this.addURLDependency(k, process.cwd());
-      const contents = v.code.code || v.code;
+      const contents = v.code;
       dbg('parse:vue:write', [k, contents]);
       this.addDependency(k, {contents: contents});
     });
