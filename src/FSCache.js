@@ -8,9 +8,9 @@ const json5 = require('json5');
 const OPTION_KEYS = ['publicURL', 'minify', 'hmr'];
 
 class FSCache {
-  constructor(options, parser) {
+  constructor(options, fs) {
     this.options = options;
-    this.parser = parser;
+    this.fs = fs.cache;
     this.dir = path.resolve(options.cacheDir || '.cache');
     this.dirExists = false;
     this.invalidated = new Set();
@@ -19,10 +19,6 @@ class FSCache {
         version: pkg.version
       })
     );
-  }
-
-  get fs() {
-    return this.parser.fs.cache;
   }
 
   async ensureDirExists() {

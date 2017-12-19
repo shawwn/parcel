@@ -30,7 +30,7 @@ class Bundler extends EventEmitter {
     this.hookFS(this.parser.fs);
     this.packagers = new PackagerRegistry();
     this.cache = this.options.cache
-      ? new FSCache(this.options, this.parser)
+      ? new FSCache(this.options, this.parser.fs)
       : null;
     this.logger = new Logger(this.options);
     this.delegate = options.delegate || {};
