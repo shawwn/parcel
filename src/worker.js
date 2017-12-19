@@ -1,22 +1,40 @@
 require('v8-compile-cache');
-const fs = require('./utils/fs');
 const Parser = require('./Parser');
 const babel = require('./transforms/babel');
+const dnode = require('dnode');
+const promisify = require('./utils/promisify');
 
-let parser;
+let self = {};
 
 function emit(event, ...args) {
   process.send({event, args});
 }
 
 exports.init = function(options, callback) {
-  parser = new Parser(options || {});
-  callback();
+  // console.log(['init', options.rpcport]);
+  self.d = dnode.connect(options.rpcport);
+  self.d.on('remote', function(remote) {
+    // console.log(['remote', options.rpcport]);
+    self.remote = remote;
+    self.readFile = promisify(self.remote.readFile);
+
+    self.parser = new Parser(options || {});
+    callback();
+  });
+  self.d.on('error', e => {
+    if (e.code === 'ENOENT') {
+      callback();
+    } else {
+      console.error(e);
+      callback(e);
+    }
+  });
 };
 
 exports.run = async function(path, pkg, options, callback) {
   try {
-    var asset = parser.getAsset(path, pkg, options);
+    // await self.readFile("package.json");
+    var asset = self.parser.getAsset(path, pkg, options);
     await asset.process();
 
     callback(null, {

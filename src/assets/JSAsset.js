@@ -24,8 +24,7 @@ class JSAsset extends Asset {
     this.isAstDirty = false;
     this.isES6Module = false;
     this.outputCode = null;
-    this.visitor = fsVisitor({fs: this.options.parser.inFS});
-    // this.visitor = fsVisitor({fs: require('fs')});
+    this.visitor = fsVisitor({fs: this.options.parser.fs.in});
   }
 
   mightHaveDependencies() {

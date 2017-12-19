@@ -7,9 +7,11 @@ const fs = require('./utils/fs');
 class Parser {
   constructor(options = {}) {
     this.extensions = {};
-    this.inFS = fs(options.inputFileSystem);
-    this.outFS = fs(options.outputFileSystem);
-    this.cacheFS = fs(options.cacheFileSystem);
+    this.fs = {
+      in: fs(options.inputFileSystem),
+      out: fs(options.outputFileSystem),
+      cache: fs(options.cacheFileSystem)
+    };
 
     this.registerExtension('js', './assets/JSAsset');
     this.registerExtension('jsx', './assets/JSAsset');

@@ -86,7 +86,7 @@ class Asset {
   }
 
   async load() {
-    return await this.options.parser.inFS.readFile(this.name, this.encoding);
+    return await this.options.parser.fs.in.readFile(this.name, this.encoding);
   }
 
   parse() {

@@ -22,7 +22,7 @@ class FSCache {
   }
 
   get fs() {
-    return this.parser.cacheFS;
+    return this.parser.fs.cache;
   }
 
   async ensureDirExists() {

@@ -96,11 +96,13 @@ function run(bundle, globals) {
   vm.createContext(ctx);
   const src = outFS.readFileSync(bundle.name);
   vm.runInContext(src, ctx);
-  return ctx.require(bundle.entryAsset.id);
+  const ret = ctx.require(bundle.entryAsset.id);
+  // bundle.bundler.stop();
+  return ret;
 }
 
 function assertBundleTree(bundle, tree) {
-  const fs = bundle.bundler.parser.outFS;
+  const fs = bundle.bundler.parser.fs.out;
   if (tree.name) {
     assert.equal(path.basename(bundle.name), tree.name);
   }

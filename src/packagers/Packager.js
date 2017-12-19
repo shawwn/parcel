@@ -15,11 +15,11 @@ class Packager {
   }
 
   get inFS() {
-    return this.bundler.parser.inFS;
+    return this.bundler.parser.fs.in;
   }
 
   get outFS() {
-    return this.bundler.parser.outFS;
+    return this.bundler.parser.fs.out;
   }
 
   async start() {}

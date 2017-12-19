@@ -27,6 +27,7 @@ class Bundler extends EventEmitter {
 
     this.resolver = new Resolver(this.options);
     this.parser = new Parser(this.options);
+    this.hookFS(this.parser.fs);
     this.packagers = new PackagerRegistry();
     this.cache = this.options.cache
       ? new FSCache(this.options, this.parser)
@@ -72,11 +73,23 @@ class Bundler extends EventEmitter {
   }
 
   get outFS() {
-    return this.parser.outFS;
+    return this.parser.fs.out;
   }
 
   get inFS() {
-    return this.parser.inFS;
+    return this.parser.fs.in;
+  }
+
+  hookFS(fs) {
+    const {readFile, readFileSync} = fs.in;
+    fs.in.readFile = async (...args) => {
+      // console.log('readfile', ...args);
+      return await readFile(...args);
+    };
+    fs.in.readFileSync = (...args) => {
+      // console.log('readFileSync', ...args);
+      return readFileSync(...args);
+    };
   }
 
   addAssetType(extension, path) {
@@ -141,7 +154,7 @@ class Bundler extends EventEmitter {
 
       // If this is the initial bundle, ensure the output directory exists, and resolve the main asset.
       if (isInitialBundle) {
-        await this.parser.outFS.mkdirp(this.options.outDir);
+        await this.parser.fs.out.mkdirp(this.options.outDir);
 
         this.mainAsset = await this.resolveAsset(this.mainFile);
         this.buildQueue.add(this.mainAsset);
@@ -187,7 +200,7 @@ class Bundler extends EventEmitter {
     await this.loadPlugins();
 
     this.options.extensions = Object.assign({}, this.parser.extensions);
-    this.farm = WorkerFarm.getShared(this.options);
+    this.farm = WorkerFarm.getShared(this.options, this.parser.fs);
 
     if (this.options.watch) {
       // FS events on macOS are flakey in the tests, which write lots of files very quickly
