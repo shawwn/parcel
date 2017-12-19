@@ -1,10 +1,9 @@
 const assert = require('assert');
-const fs = require('fs');
-const {bundle, run, assertBundleTree} = require('./utils');
+const {bundling, run, assertBundleTree} = require('./utils');
 
 describe('less', function() {
   it('should support requiring less files', async function() {
-    let b = await bundle(__dirname + '/integration/less/index.js');
+    let {b, fs} = await bundling(__dirname + '/integration/less/index.js');
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -27,7 +26,9 @@ describe('less', function() {
   });
 
   it('should support less imports', async function() {
-    let b = await bundle(__dirname + '/integration/less-import/index.js');
+    let {b, fs} = await bundling(
+      __dirname + '/integration/less-import/index.js'
+    );
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -51,7 +52,7 @@ describe('less', function() {
   });
 
   it('should support linking to assets with url() from less', async function() {
-    let b = await bundle(__dirname + '/integration/less-url/index.js');
+    let {b, fs} = await bundling(__dirname + '/integration/less-url/index.js');
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -87,7 +88,9 @@ describe('less', function() {
   });
 
   it('should support transforming less with postcss', async function() {
-    let b = await bundle(__dirname + '/integration/less-postcss/index.js');
+    let {b, fs} = await bundling(
+      __dirname + '/integration/less-postcss/index.js'
+    );
 
     assertBundleTree(b, {
       name: 'index.js',

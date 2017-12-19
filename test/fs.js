@@ -1,5 +1,4 @@
 const assert = require('assert');
-const fs = require('fs');
 const {bundle, run, assertBundleTree} = require('./utils');
 
 describe('fs', function() {

@@ -1,7 +1,7 @@
 const assert = require('assert');
-const fs = require('fs');
 const path = require('path');
-const {bundler, run, assertBundleTree, sleep} = require('./utils');
+const {bundler: _bundler, run, assertBundleTree, sleep} = require('./utils');
+const bundler = (file, opts) => _bundler(file, opts, false);
 const rimraf = require('rimraf');
 const promisify = require('../src/utils/promisify');
 const ncp = promisify(require('ncp'));
@@ -32,7 +32,7 @@ describe('watcher', function() {
     let output = run(bundle);
     assert.equal(output(), 3);
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'exports.a = 5; exports.b = 5;'
     );
@@ -74,7 +74,7 @@ describe('watcher', function() {
 
     // change b.js so that it no longer depends on common.js.
     // This should cause common.js and dependencies to no longer be hoisted to the root bundle.
-    fs.writeFileSync(__dirname + '/input/b.js', 'module.exports = 5;');
+    b.inFS.writeFileSync(__dirname + '/input/b.js', 'module.exports = 5;');
 
     bundle = await nextBundle(b);
     assertBundleTree(bundle, {
@@ -99,6 +99,7 @@ describe('watcher', function() {
   it('should only re-package bundles that changed', async function() {
     await ncp(__dirname + '/integration/dynamic-hoist', __dirname + '/input');
     b = bundler(__dirname + '/input/index.js', {watch: true});
+    const fs = b.outFS;
 
     let bundle = await b.bundle();
     let mtimes = fs
@@ -155,7 +156,7 @@ describe('watcher', function() {
     assert(b.loadedAssets.has(path.join(__dirname, '/input/common-dep.js')));
 
     // Get rid of common-dep.js
-    fs.writeFileSync(__dirname + '/input/common.js', 'module.exports = 5;');
+    b.inFS.writeFileSync(__dirname + '/input/common.js', 'module.exports = 5;');
 
     bundle = await nextBundle(b);
     assertBundleTree(bundle, {

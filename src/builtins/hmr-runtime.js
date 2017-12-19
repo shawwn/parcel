@@ -20,6 +20,7 @@ if (!module.bundle.parent) {
     var data = JSON.parse(event.data);
 
     if (data.type === 'update') {
+      // console.log(['hmr update', data]);
       data.assets.forEach(function (asset) {
         hmrApply(global.require, asset);
       });
@@ -80,6 +81,7 @@ function hmrApply(bundle, asset) {
   }
 
   if (modules[asset.id] || !bundle.parent) {
+    // console.log(['hmrApply', asset.id, asset.generated.js]);
     var fn = new Function('require', 'module', 'exports', asset.generated.js);
     asset.isNew = !modules[asset.id];
     modules[asset.id] = [fn, asset.deps];
@@ -103,6 +105,7 @@ function hmrAccept(bundle, id) {
     cached.hot._disposeCallback();
   }
 
+  // console.log(['hmrAccept', id, bundle.cache[id]]);
   delete bundle.cache[id];
   bundle(id);
 

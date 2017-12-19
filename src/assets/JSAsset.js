@@ -24,6 +24,8 @@ class JSAsset extends Asset {
     this.isAstDirty = false;
     this.isES6Module = false;
     this.outputCode = null;
+    this.visitor = fsVisitor({fs: this.options.parser.inFS});
+    // this.visitor = fsVisitor({fs: require('fs')});
   }
 
   mightHaveDependencies() {
@@ -84,7 +86,7 @@ class JSAsset extends Asset {
   async transform() {
     if (this.dependencies.has('fs') && FS_RE.test(this.contents)) {
       await this.parseIfNeeded();
-      this.traverse(fsVisitor);
+      this.traverse(this.visitor);
     }
 
     if (GLOBAL_RE.test(this.contents)) {

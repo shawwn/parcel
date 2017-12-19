@@ -1,4 +1,3 @@
-const fs = require('./utils/fs');
 const Resolver = require('./Resolver');
 const Parser = require('./Parser');
 const WorkerFarm = require('./WorkerFarm');
@@ -29,7 +28,9 @@ class Bundler extends EventEmitter {
     this.resolver = new Resolver(this.options);
     this.parser = new Parser(this.options);
     this.packagers = new PackagerRegistry();
-    this.cache = this.options.cache ? new FSCache(this.options) : null;
+    this.cache = this.options.cache
+      ? new FSCache(this.options, this.parser)
+      : null;
     this.logger = new Logger(this.options);
     this.delegate = options.delegate || {};
 
@@ -55,6 +56,9 @@ class Bundler extends EventEmitter {
       typeof options.watch === 'boolean' ? options.watch : !isProduction;
     return {
       outDir: Path.resolve(options.outDir || 'dist'),
+      outputFileSystem: options.outputFileSystem,
+      inputFileSystem: options.inputFileSystem,
+      cacheFileSystem: options.cacheFileSystem,
       publicURL: publicURL,
       watch: watch,
       cache: typeof options.cache === 'boolean' ? options.cache : true,
@@ -65,6 +69,14 @@ class Bundler extends EventEmitter {
       hmr: typeof options.hmr === 'boolean' ? options.hmr : watch,
       logLevel: typeof options.logLevel === 'number' ? options.logLevel : 3
     };
+  }
+
+  get outFS() {
+    return this.parser.outFS;
+  }
+
+  get inFS() {
+    return this.parser.inFS;
   }
 
   addAssetType(extension, path) {
@@ -129,7 +141,7 @@ class Bundler extends EventEmitter {
 
       // If this is the initial bundle, ensure the output directory exists, and resolve the main asset.
       if (isInitialBundle) {
-        await fs.mkdirp(this.options.outDir);
+        await this.parser.outFS.mkdirp(this.options.outDir);
 
         this.mainAsset = await this.resolveAsset(this.mainFile);
         this.buildQueue.add(this.mainAsset);
@@ -366,7 +378,9 @@ class Bundler extends EventEmitter {
     if (!bundle) {
       bundle = new Bundle(
         asset.type,
-        Path.join(this.options.outDir, asset.generateBundleName(true))
+        Path.join(this.options.outDir, asset.generateBundleName(true)),
+        undefined,
+        this
       );
       bundle.entryAsset = asset;
     }

@@ -1,6 +1,5 @@
 const assert = require('assert');
-const fs = require('fs');
-const {bundle, run, assertBundleTree} = require('./utils');
+const {bundle, bundling, run, assertBundleTree} = require('./utils');
 
 describe('glob', function() {
   it('should require a glob of files', async function() {
@@ -32,7 +31,7 @@ describe('glob', function() {
   });
 
   it('should support importing a glob of CSS files', async function() {
-    let b = await bundle(__dirname + '/integration/glob-css/index.js');
+    let {b, fs} = await bundling(__dirname + '/integration/glob-css/index.js');
 
     assertBundleTree(b, {
       name: 'index.js',

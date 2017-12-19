@@ -1,10 +1,9 @@
 const assert = require('assert');
-const fs = require('fs');
-const {bundle, run, assertBundleTree} = require('./utils');
+const {bundling, run, assertBundleTree} = require('./utils');
 
 describe('sass', function() {
   it('should support requiring sass files', async function() {
-    let b = await bundle(__dirname + '/integration/sass/index.js');
+    let {b, fs} = await bundling(__dirname + '/integration/sass/index.js');
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -27,7 +26,7 @@ describe('sass', function() {
   });
 
   it('should support requiring scss files', async function() {
-    let b = await bundle(__dirname + '/integration/scss/index.js');
+    let {b, fs} = await bundling(__dirname + '/integration/scss/index.js');
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -50,7 +49,9 @@ describe('sass', function() {
   });
 
   it('should support scss imports', async function() {
-    let b = await bundle(__dirname + '/integration/scss-import/index.js');
+    let {b, fs} = await bundling(
+      __dirname + '/integration/scss-import/index.js'
+    );
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -74,7 +75,7 @@ describe('sass', function() {
   });
 
   it('should support linking to assets with url() from scss', async function() {
-    let b = await bundle(__dirname + '/integration/scss-url/index.js');
+    let {b, fs} = await bundling(__dirname + '/integration/scss-url/index.js');
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -110,7 +111,9 @@ describe('sass', function() {
   });
 
   it('should support transforming scss with postcss', async function() {
-    let b = await bundle(__dirname + '/integration/scss-postcss/index.js');
+    let {b, fs} = await bundling(
+      __dirname + '/integration/scss-postcss/index.js'
+    );
 
     assertBundleTree(b, {
       name: 'index.js',

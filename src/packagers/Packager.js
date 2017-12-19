@@ -1,4 +1,3 @@
-const fs = require('fs');
 const promisify = require('../utils/promisify');
 
 class Packager {
@@ -10,9 +9,17 @@ class Packager {
   }
 
   setup() {
-    this.dest = fs.createWriteStream(this.bundle.name);
+    this.dest = this.outFS.createWriteStream(this.bundle.name);
     this.dest.write = promisify(this.dest.write.bind(this.dest));
     this.dest.end = promisify(this.dest.end.bind(this.dest));
+  }
+
+  get inFS() {
+    return this.bundler.parser.inFS;
+  }
+
+  get outFS() {
+    return this.bundler.parser.outFS;
   }
 
   async start() {}

@@ -39,11 +39,15 @@ require = (function (modules, cache, entry) {
       }
 
       localRequire.resolve = function (x) {
-        return modules[name][1][x] || x;
+        var y = modules[name][1][x] || x;
+        // console.log(['localRequire.resolve', name, x, y.toString()]);
+        return y;
       };
 
       var module = cache[name] = new newRequire.Module;
+      // console.log(['newRequire.module', name, modules[name][0].toString()]);
       modules[name][0].call(module.exports, localRequire, module, module.exports);
+      // console.log(['required', name, module.exports]);
     }
 
     return cache[name].exports;

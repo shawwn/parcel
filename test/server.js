@@ -1,6 +1,6 @@
 const assert = require('assert');
-const fs = require('fs');
-const {bundler, run, assertBundleTree} = require('./utils');
+const {bundler: _bundler, run, assertBundleTree} = require('./utils');
+const bundler = (file, opts) => _bundler(file, opts, false);
 const http = require('http');
 
 describe('server', function() {
@@ -34,7 +34,10 @@ describe('server', function() {
     server = await b.serve(0);
 
     let data = await get('/dist/index.js');
-    assert.equal(data, fs.readFileSync(__dirname + '/dist/index.js', 'utf8'));
+    assert.equal(
+      data,
+      b.outFS.readFileSync(__dirname + '/dist/index.js', 'utf8')
+    );
   });
 
   it('should serve a default page if the main bundle is an HTML asset', async function() {
@@ -42,10 +45,16 @@ describe('server', function() {
     server = await b.serve(0);
 
     let data = await get('/');
-    assert.equal(data, fs.readFileSync(__dirname + '/dist/index.html', 'utf8'));
+    assert.equal(
+      data,
+      b.outFS.readFileSync(__dirname + '/dist/index.html', 'utf8')
+    );
 
     data = await get('/foo/bar');
-    assert.equal(data, fs.readFileSync(__dirname + '/dist/index.html', 'utf8'));
+    assert.equal(
+      data,
+      b.outFS.readFileSync(__dirname + '/dist/index.html', 'utf8')
+    );
   });
 
   it('should serve a 404 if the file does not exist', async function() {

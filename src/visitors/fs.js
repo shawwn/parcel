@@ -1,52 +1,54 @@
 const t = require('babel-types');
 const Path = require('path');
-const fs = require('fs');
 const template = require('babel-template');
 
 const bufferTemplate = template('Buffer(CONTENT, ENC)');
 
-module.exports = {
-  AssignmentExpression(path) {
-    if (!isRequire(path.node.right, 'fs', 'readFileSync')) {
-      return;
-    }
-
-    for (let name in path.getBindingIdentifiers()) {
-      const binding = path.scope.getBinding(name);
-      if (!binding) continue;
-
-      binding.path.setData('__require', path.node);
-    }
-  },
-
-  CallExpression(path, asset) {
-    let callee = path.node.callee;
-    if (referencesImport(path, 'fs', 'readFileSync')) {
-      let vars = {
-        __dirname: Path.dirname(asset.name),
-        __filename: asset.basename
-      };
-      let [filename, ...args] = path
-        .get('arguments')
-        .map(arg => evaluate(arg, vars));
-      filename = Path.resolve(filename);
-
-      let res = fs.readFileSync(filename, ...args);
-      let replacementNode;
-      if (Buffer.isBuffer(res)) {
-        replacementNode = bufferTemplate({
-          CONTENT: t.stringLiteral(res.toString('base64')),
-          ENC: t.stringLiteral('base64')
-        });
-      } else {
-        replacementNode = t.stringLiteral(res);
+module.exports = function FsVisitor(opts) {
+  const fs = opts.fs;
+  return {
+    AssignmentExpression(path) {
+      if (!isRequire(path.node.right, 'fs', 'readFileSync')) {
+        return;
       }
 
-      asset.addDependency(filename, {includedInParent: true});
-      path.replaceWith(replacementNode);
-      asset.isAstDirty = true;
+      for (let name in path.getBindingIdentifiers()) {
+        const binding = path.scope.getBinding(name);
+        if (!binding) continue;
+
+        binding.path.setData('__require', path.node);
+      }
+    },
+
+    CallExpression(path, asset) {
+      let callee = path.node.callee;
+      if (referencesImport(path, 'fs', 'readFileSync')) {
+        let vars = {
+          __dirname: Path.dirname(asset.name),
+          __filename: asset.basename
+        };
+        let [filename, ...args] = path
+          .get('arguments')
+          .map(arg => evaluate(arg, vars));
+        filename = Path.resolve(filename);
+
+        let res = fs.readFileSync(filename, ...args);
+        let replacementNode;
+        if (Buffer.isBuffer(res)) {
+          replacementNode = bufferTemplate({
+            CONTENT: t.stringLiteral(res.toString('base64')),
+            ENC: t.stringLiteral('base64')
+          });
+        } else {
+          replacementNode = t.stringLiteral(res);
+        }
+
+        asset.addDependency(filename, {includedInParent: true});
+        path.replaceWith(replacementNode);
+        asset.isAstDirty = true;
+      }
     }
-  }
+  };
 };
 
 function isRequire(node, name, method) {

@@ -1,10 +1,9 @@
 const assert = require('assert');
-const fs = require('fs');
-const {bundle, run, assertBundleTree} = require('./utils');
+const {bundling, run, assertBundleTree} = require('./utils');
 
 describe('css', function() {
   it('should produce two bundles when importing a CSS file', async function() {
-    let b = await bundle(__dirname + '/integration/css/index.js');
+    let {b, fs} = await bundling(__dirname + '/integration/css/index.js');
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -24,7 +23,9 @@ describe('css', function() {
   });
 
   it('should support loading a CSS bundle along side dynamic imports', async function() {
-    let b = await bundle(__dirname + '/integration/dynamic-css/index.js');
+    let {b, fs} = await bundling(
+      __dirname + '/integration/dynamic-css/index.js'
+    );
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -55,7 +56,9 @@ describe('css', function() {
   });
 
   it('should support importing CSS from a CSS file', async function() {
-    let b = await bundle(__dirname + '/integration/css-import/index.js');
+    let {b, fs} = await bundling(
+      __dirname + '/integration/css-import/index.js'
+    );
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -81,7 +84,7 @@ describe('css', function() {
   });
 
   it('should support linking to assets with url() from CSS', async function() {
-    let b = await bundle(__dirname + '/integration/css-url/index.js');
+    let {b, fs} = await bundling(__dirname + '/integration/css-url/index.js');
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -121,7 +124,7 @@ describe('css', function() {
   });
 
   it('should support transforming with postcss', async function() {
-    let b = await bundle(__dirname + '/integration/postcss/index.js');
+    let {b, fs} = await bundling(__dirname + '/integration/postcss/index.js');
 
     assertBundleTree(b, {
       name: 'index.js',
@@ -148,7 +151,7 @@ describe('css', function() {
   });
 
   it('should minify CSS in production mode', async function() {
-    let b = await bundle(__dirname + '/integration/cssnano/index.js', {
+    let {b, fs} = await bundling(__dirname + '/integration/cssnano/index.js', {
       production: true
     });
 

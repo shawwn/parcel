@@ -1,5 +1,4 @@
 const Path = require('path');
-const fs = require('fs');
 const crypto = require('crypto');
 
 /**
@@ -9,7 +8,8 @@ const crypto = require('crypto');
  * the bundle, e.g. importing a CSS file from JS.
  */
 class Bundle {
-  constructor(type, name, parent) {
+  constructor(type, name, parent, bundler) {
+    this.bundler = bundler;
     this.type = type;
     this.name = name;
     this.parentBundle = parent;
@@ -49,7 +49,7 @@ class Bundle {
   }
 
   createChildBundle(type, name) {
-    let bundle = new Bundle(type, name, this);
+    let bundle = new Bundle(type, name, this, this.bundler);
     this.childBundles.add(bundle);
     return bundle;
   }

@@ -48,10 +48,13 @@ class Logger {
     if (this.logLevel < 1) {
       return;
     }
+    if (err.codeFrame && this.logLevel < 2) {
+      return;
+    }
 
     let {message, stack} = prettyError(err, {color: this.color});
 
-    this.status('🚨', message, 'red');
+    this.status('🚨', message, 'red', this.logLevel);
     if (stack) {
       this.write(stack);
     }
@@ -87,8 +90,8 @@ class Logger {
     readline.moveCursor(stdout, 0, n);
   }
 
-  status(emoji, message, color = 'gray') {
-    if (this.logLevel < 3) {
+  status(emoji, message, color = 'gray', logLevel = 3) {
+    if (this.logLevel < logLevel) {
       return;
     }
 

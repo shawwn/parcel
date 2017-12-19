@@ -1,10 +1,9 @@
 const assert = require('assert');
-const fs = require('fs');
-const {bundle, run, assertBundleTree} = require('./utils');
+const {bundling, run, assertBundleTree} = require('./utils');
 
 describe('html', function() {
   it('should support bundling HTML', async function() {
-    let b = await bundle(__dirname + '/integration/html/index.html');
+    let {b, fs} = await bundling(__dirname + '/integration/html/index.html');
 
     assertBundleTree(b, {
       name: 'index.html',
@@ -39,7 +38,9 @@ describe('html', function() {
   });
 
   it('should support transforming HTML with posthtml', async function() {
-    let b = await bundle(__dirname + '/integration/posthtml/index.html');
+    let {b, fs} = await bundling(
+      __dirname + '/integration/posthtml/index.html'
+    );
 
     assertBundleTree(b, {
       name: 'index.html',
@@ -52,7 +53,9 @@ describe('html', function() {
   });
 
   it('should insert sibling CSS bundles for JS files in the HEAD', async function() {
-    let b = await bundle(__dirname + '/integration/html-css/index.html');
+    let {b, fs} = await bundling(
+      __dirname + '/integration/html-css/index.html'
+    );
 
     assertBundleTree(b, {
       name: 'index.html',
@@ -81,7 +84,9 @@ describe('html', function() {
   });
 
   it('should insert a HEAD element if needed when adding CSS bundles', async function() {
-    let b = await bundle(__dirname + '/integration/html-css-head/index.html');
+    let {b, fs} = await bundling(
+      __dirname + '/integration/html-css-head/index.html'
+    );
 
     assertBundleTree(b, {
       name: 'index.html',
@@ -110,9 +115,12 @@ describe('html', function() {
   });
 
   it('should minify HTML in production mode', async function() {
-    let b = await bundle(__dirname + '/integration/htmlnano/index.html', {
-      production: true
-    });
+    let {b, fs} = await bundling(
+      __dirname + '/integration/htmlnano/index.html',
+      {
+        production: true
+      }
+    );
 
     let css = fs.readFileSync(__dirname + '/dist/index.html', 'utf8');
     assert(css.includes('Other page'));
@@ -120,7 +128,7 @@ describe('html', function() {
   });
 
   it('should not prepend the public path to assets with remote URLs', async function() {
-    let b = await bundle(__dirname + '/integration/html/index.html');
+    let {b, fs} = await bundling(__dirname + '/integration/html/index.html');
 
     let html = fs.readFileSync(__dirname + '/dist/index.html', 'utf8');
     assert(
@@ -129,7 +137,7 @@ describe('html', function() {
   });
 
   it('should not prepend the public path to hash links', async function() {
-    let b = await bundle(__dirname + '/integration/html/index.html');
+    let {b, fs} = await bundling(__dirname + '/integration/html/index.html');
 
     let html = fs.readFileSync(__dirname + '/dist/index.html', 'utf8');
     assert(html.includes('<a href="#hash_link">'));

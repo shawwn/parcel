@@ -1,5 +1,4 @@
 const Packager = require('./Packager');
-const fs = require('../utils/fs');
 const path = require('path');
 const url = require('url');
 
@@ -19,8 +18,8 @@ class RawPackager extends Packager {
     }
 
     let contents =
-      asset.generated[asset.type] || (await fs.readFile(asset.name));
-    await fs.writeFile(name, contents);
+      asset.generated[asset.type] || (await this.inFS.readFile(asset.name));
+    await this.outFS.writeFile(name, contents);
   }
 
   end() {}

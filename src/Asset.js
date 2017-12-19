@@ -1,5 +1,4 @@
 const path = require('path');
-const fs = require('./utils/fs');
 const objectHash = require('./utils/objectHash');
 const md5 = require('./utils/md5');
 const isURL = require('./utils/is-url');
@@ -87,7 +86,7 @@ class Asset {
   }
 
   async load() {
-    return await fs.readFile(this.name, this.encoding);
+    return await this.options.parser.inFS.readFile(this.name, this.encoding);
   }
 
   parse() {

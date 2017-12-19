@@ -1,6 +1,6 @@
 const assert = require('assert');
-const fs = require('fs');
 const path = require('path');
+const FS = require('fs');
 const {bundler, run, assertBundleTree, sleep} = require('./utils');
 const rimraf = require('rimraf');
 const promisify = require('../src/utils/promisify');
@@ -49,7 +49,7 @@ describe('hmr', function() {
 
     ws = new WebSocket('ws://localhost:' + b.options.hmrPort);
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'exports.a = 5; exports.b = 5;'
     );
@@ -69,7 +69,7 @@ describe('hmr', function() {
 
     ws = new WebSocket('ws://localhost:' + b.options.hmrPort);
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'require("fs"); exports.a = 5; exports.b = 5;'
     );
@@ -87,7 +87,7 @@ describe('hmr', function() {
 
     ws = new WebSocket('ws://localhost:' + b.options.hmrPort);
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'require("fs"; exports.a = 5; exports.b = 5;'
     );
@@ -113,7 +113,7 @@ describe('hmr', function() {
     b = bundler(__dirname + '/input/index.js', {watch: true, hmr: true});
     let bundle = await b.bundle();
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'require("fs"; exports.a = 5; exports.b = 5;'
     );
@@ -133,7 +133,7 @@ describe('hmr', function() {
 
     ws = new WebSocket('ws://localhost:' + b.options.hmrPort);
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'require("fs"; exports.a = 5; exports.b = 5;'
     );
@@ -141,7 +141,7 @@ describe('hmr', function() {
     let msg = JSON.parse(await nextEvent(ws, 'message'));
     assert.equal(msg.type, 'error');
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'require("fs"); exports.a = 5; exports.b = 5;'
     );
@@ -165,12 +165,14 @@ describe('hmr', function() {
 
     assert.deepEqual(outputs, [3]);
 
-    fs.writeFileSync(
+    FS.writeFileSync(
       __dirname + '/input/local.js',
       'exports.a = 5; exports.b = 5;'
     );
 
     await nextEvent(b, 'bundled');
+    await sleep(50);
+
     assert.deepEqual(outputs, [3, 10]);
   });
 
@@ -189,12 +191,13 @@ describe('hmr', function() {
 
     assert.deepEqual(outputs, [3]);
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'exports.a = 5; exports.b = 5;'
     );
 
     await nextEvent(b, 'bundled');
+    await sleep(50);
     assert.deepEqual(outputs, [3, 'dispose', 10, 'accept']);
   });
 
@@ -214,7 +217,7 @@ describe('hmr', function() {
     await sleep(50);
     assert.deepEqual(outputs, [3]);
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'exports.a = 5; exports.b = 5;'
     );
@@ -239,7 +242,7 @@ describe('hmr', function() {
       }
     });
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'require("fs"; exports.a = 5; exports.b = 5;'
     );
@@ -268,13 +271,13 @@ describe('hmr', function() {
       }
     });
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'require("fs"; exports.a = 5; exports.b = 5;'
     );
     await nextEvent(b, 'buildEnd');
 
-    fs.writeFileSync(
+    b.inFS.writeFileSync(
       __dirname + '/input/local.js',
       'require("fs"); exports.a = 5; exports.b = 5;'
     );
