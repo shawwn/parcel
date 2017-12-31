@@ -17,6 +17,12 @@ function wrap(fn, xform = x => x) {
   };
 }
 
+function nextEvent(emitter, event) {
+  return new Promise(resolve => {
+    emitter.once(event, resolve);
+  });
+}
+
 function cleanupPort(fs) {
   try {
     FS.unlinkSync(self.rpcport);
@@ -37,6 +43,11 @@ class WorkerFarm extends Farm {
     this.remoteWorker = this.promisifyWorker(this.setup(['init', 'run']));
 
     this.started = false;
+    this.listening = false;
+    if (self.rpc) {
+      self.rpc.close();
+      delete self.rpc;
+    }
 
     if (!self.rpc) {
       cleanupPort(this.fs.in);
@@ -49,7 +60,8 @@ class WorkerFarm extends Farm {
         }
       }).listen(self.rpcport);
       self.rpc.on('listening', () => {
-        this.init(options);
+        this.listening = true;
+        this.emit('listening');
       });
       self.rpc.on('remote', (remote, d) => {
         d = d;
@@ -57,13 +69,12 @@ class WorkerFarm extends Farm {
       self.rpc.on('local', (ref, d) => {
         d = d;
       });
-    } else {
-      this.init(options);
     }
+    this.init(options);
   }
 
   init(options) {
-    options = Object.assign({rpcport: self.rpcport}, options);
+    options = Object.assign({rpcport: self.rpcport}, options); //{inputFileSystem: false, outputFileSystem: false, cacheFileSystem: false});
     this.localWorker.init(options);
     this.initRemoteWorkers(options);
   }

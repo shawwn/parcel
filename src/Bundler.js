@@ -14,6 +14,7 @@ const PackagerRegistry = require('./packagers');
 const localRequire = require('./utils/localRequire');
 const customErrors = require('./utils/customErrors');
 const config = require('./utils/config');
+const FileSystem = require('./utils/fs');
 
 /**
  * The Bundler is the main entry point. It resolves and loads assets,
@@ -26,8 +27,14 @@ class Bundler extends EventEmitter {
     this.options = this.normalizeOptions(options);
 
     this.resolver = new Resolver(this.options);
-    this.parser = new Parser(this.options);
-    this.hookFS(this.parser.fs);
+    this.parser = new Parser(
+      {
+        in: new FileSystem(options.inputFileSystem),
+        out: new FileSystem(options.outputFileSystem),
+        cache: new FileSystem(options.cacheFileSystem)
+      },
+      this.options
+    );
     this.packagers = new PackagerRegistry();
     this.cache = this.options.cache
       ? new FSCache(this.options, this.parser.fs)
@@ -57,9 +64,6 @@ class Bundler extends EventEmitter {
       typeof options.watch === 'boolean' ? options.watch : !isProduction;
     return {
       outDir: Path.resolve(options.outDir || 'dist'),
-      outputFileSystem: options.outputFileSystem,
-      inputFileSystem: options.inputFileSystem,
-      cacheFileSystem: options.cacheFileSystem,
       publicURL: publicURL,
       watch: watch,
       cache: typeof options.cache === 'boolean' ? options.cache : true,
@@ -78,18 +82,6 @@ class Bundler extends EventEmitter {
 
   get inFS() {
     return this.parser.fs.in;
-  }
-
-  hookFS(fs) {
-    const {readFile, readFileSync} = fs.in;
-    fs.in.readFile = async (...args) => {
-      // console.log('readfile', ...args);
-      return await readFile(...args);
-    };
-    fs.in.readFileSync = (...args) => {
-      // console.log('readFileSync', ...args);
-      return readFileSync(...args);
-    };
   }
 
   addAssetType(extension, path) {

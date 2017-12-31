@@ -3,6 +3,8 @@ const Parser = require('./Parser');
 const babel = require('./transforms/babel');
 const dnode = require('dnode');
 const promisify = require('./utils/promisify');
+const FileSystem = require('./utils/fs');
+const fs = new FileSystem();
 
 let self = {};
 
@@ -10,25 +12,38 @@ function emit(event, ...args) {
   process.send({event, args});
 }
 
-exports.init = function(options, callback) {
-  // console.log(['init', options.rpcport]);
-  self.d = dnode.connect(options.rpcport);
-  self.d.on('remote', function(remote) {
-    // console.log(['remote', options.rpcport]);
-    self.remote = remote;
-    self.readFile = promisify(self.remote.readFile);
+function initRPC(port) {
+  if (!self.d) {
+    // console.log(['init', options.rpcport]);
+    self.d = dnode.connect(port);
+    self.d.on('remote', function(remote) {
+      // console.log(['remote', options.rpcport]);
+      self.remote = remote;
+      self.readFile = promisify(self.remote.readFile);
+      // callback();
+    });
+    self.d.on('error', e => {
+      if (e.code === 'ENOENT') {
+        // callback();
+      } else {
+        console.error(e);
+        // callback(e);
+      }
+    });
+  }
+}
 
-    self.parser = new Parser(options || {});
-    callback();
-  });
-  self.d.on('error', e => {
-    if (e.code === 'ENOENT') {
-      callback();
-    } else {
-      console.error(e);
-      callback(e);
-    }
-  });
+exports.init = function(options, callback) {
+  self.parser = new Parser(
+    {
+      in: fs,
+      out: fs,
+      cache: fs
+    },
+    options || {}
+  );
+  initRPC(options.rpcport);
+  callback();
 };
 
 exports.run = async function(path, pkg, options, callback) {

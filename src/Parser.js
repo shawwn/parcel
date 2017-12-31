@@ -2,16 +2,11 @@ const path = require('path');
 const RawAsset = require('./assets/RawAsset');
 const GlobAsset = require('./assets/GlobAsset');
 const glob = require('glob');
-const fs = require('./utils/fs');
 
 class Parser {
-  constructor(options = {}) {
+  constructor(fs, options = {}) {
     this.extensions = {};
-    this.fs = {
-      in: fs(options.inputFileSystem),
-      out: fs(options.outputFileSystem),
-      cache: fs(options.cacheFileSystem)
-    };
+    this.fs = fs;
 
     this.registerExtension('js', './assets/JSAsset');
     this.registerExtension('jsx', './assets/JSAsset');

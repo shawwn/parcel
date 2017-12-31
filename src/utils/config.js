@@ -1,4 +1,5 @@
-const fs = require('./fs')();
+const FileSystem = require('./fs');
+const fs = new FileSystem(); // TODO
 const path = require('path');
 const json5 = require('json5');
 
