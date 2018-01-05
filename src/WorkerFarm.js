@@ -7,6 +7,10 @@ class WorkerFarm {
     this.options = options;
   }
 
+  get activeWorkers() {
+    return this.workerNodes ? this.workerNodes.workersQueue.filter(worker => worker.isOperational()).length : 0;
+  }
+
   async run(...args) {
     if (!this.localWorker) {
       this.localWorker = require('./worker');
@@ -27,22 +31,26 @@ class WorkerFarm {
     // Child process workers are slow to start (~600ms).
     // While we're waiting, just run on the main thread.
     // This significantly speeds up startup time.
-    let workers = this.workerNodes.workersQueue.filter(worker => worker.isOperational()).length;
-    if (workers <= 0) {
+    if (this.activeWorkers <= 0) {
       console.log('local');
       return await this.localWorker(this.options, ...args);
     } else {
-      console.log('remote ' + workers);
+      console.log('remote ' + this.activeWorkers);
       return await this.workerNodes.call(this.options, ...args);
     }
   }
 
   async init(options) {
-    await this.end();
+    // await this.end();
     this.options = options;
     if (this.localWorker) {
       this.localWorker.init(options);
     }
+    let promises = [];
+    for (let i = 0; i < this.activeWorkers; i++) {
+      promises.push(this.workerNodes.call.init(options));
+    }
+    await Promise.all(promises);
   }
 
   async end() {
