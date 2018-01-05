@@ -5,46 +5,51 @@ const path = require('path');
 class WorkerFarm {
   constructor(options) {
     this.options = options;
-    this.started = false;
-
-    // Start workers
-    this.localWorker = require('./worker');
-    let workerOptions = {
-      autoStart: true,
-      lazyStart: true,
-      maxWorkers: getNumWorkers(),
-      minWorkers: 1
-    };
-    this.workerNodes = new WorkerNodes(
-      path.resolve(path.join(__dirname, 'worker.js')),
-      workerOptions
-    );
-    this.workerNodes
-      .ready()
-      .then(() => {
-        this.started = true;
-      })
-      .catch(error => {
-        throw error;
-      });
-
-    this.run.bind(this);
   }
 
   async run(...args) {
+    if (!this.localWorker) {
+      this.localWorker = require('./worker');
+    }
+    if (!this.workerNodes) {
+      let workerOptions = {
+        autoStart: true,
+        lazyStart: true,
+        maxWorkers: getNumWorkers(),
+        minWorkers: 1,
+        workerStopTimeout: 9999999
+      };
+      this.workerNodes = new WorkerNodes(
+        path.resolve(path.join(__dirname, 'worker.js')),
+        workerOptions
+      );
+    }
     // Child process workers are slow to start (~600ms).
     // While we're waiting, just run on the main thread.
     // This significantly speeds up startup time.
-    if (!this.started) {
-      return this.localWorker(...args, this.options);
+    let workers = this.workerNodes.workersQueue.filter(worker => worker.isOperational()).length;
+    if (workers <= 0) {
+      console.log('local');
+      return await this.localWorker(this.options, ...args);
     } else {
-      return this.workerNodes.call(...args, this.options);
+      console.log('remote ' + workers);
+      return await this.workerNodes.call(this.options, ...args);
+    }
+  }
+
+  async init(options) {
+    await this.end();
+    this.options = options;
+    if (this.localWorker) {
+      this.localWorker.init(options);
     }
   }
 
   async end() {
-    await this.workerNodes.terminate();
-    this.workerNodes = null;
+    if (this.workerNodes) {
+      await this.workerNodes.terminate();
+      this.workerNodes = null;
+    }
   }
 }
 

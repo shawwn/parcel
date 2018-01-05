@@ -3,18 +3,18 @@ const Parser = require('./Parser');
 
 let self = {};
 
-async function init(options) {
+function init(options) {
   console.log(`INIT: ${process.pid}`);
-  self.parser = new Parser(options || {});
   Object.assign(process.env, options.env || {});
+  return new Parser(options || {});
 }
 
-module.exports = async function(path, pkg, options, parserOptions) {
+module.exports = async function(parserOptions, path, pkg, options) {
+  if (!self.parser) {
+    self.parser = init(parserOptions || {});
+  }
   try {
-    if (!self.parser) {
-      init(parserOptions);
-    }
-    var asset = self.parser.getAsset(path, pkg, options);
+    var asset = self.parser.getAsset(path, pkg, options || {});
     await asset.process();
 
     return {
@@ -32,4 +32,9 @@ module.exports = async function(path, pkg, options, parserOptions) {
     returned.fileName = path;
     throw returned;
   }
+};
+
+module.exports.init = function(options) {
+  self.parser = new Parser(options || {});
+  Object.assign(process.env, options.env || {});
 };
